@@ -1,0 +1,354 @@
+#!/bin/bash
+
+# ============================================
+# LexIA Platform - Setup Automático
+# Execute: bash setup-repo.sh
+# ============================================
+
+set -e  # Parar se houver erro
+
+echo "🚀 Iniciando setup do LexIA Platform..."
+
+# Cores
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+# Perguntar informações
+echo -e "\n${BLUE}=== CONFIGURAÇÃO INICIAL ===${NC}"
+read -p "Qual é seu usuário do GitHub? (ex: kelsonmagalhaes): " GITHUB_USER
+read -p "Qual é seu email do GitHub? (ex: seu-email@example.com): " GITHUB_EMAIL
+read -p "Qual é seu token do GitHub? (gere em: https://github.com/settings/tokens): " GITHUB_TOKEN
+
+# Configurar Git globalmente
+git config --global user.name "$GITHUB_USER"
+git config --global user.email "$GITHUB_EMAIL"
+
+echo -e "${GREEN}✅ Git configurado!${NC}"
+
+# Criar diretório
+PROJECT_DIR="lexia-platform"
+if [ -d "$PROJECT_DIR" ]; then
+    echo -e "${RED}❌ Pasta $PROJECT_DIR já existe!${NC}"
+    read -p "Deletar e recrear? (s/n): " DELETE
+    if [ "$DELETE" = "s" ]; then
+        rm -rf "$PROJECT_DIR"
+    else
+        exit 1
+    fi
+fi
+
+echo -e "\n${BLUE}=== CRIANDO ESTRUTURA ===${NC}"
+
+# Criar pasta
+mkdir -p "$PROJECT_DIR"
+cd "$PROJECT_DIR"
+
+# Inicializar Git
+git init
+git config user.name "$GITHUB_USER"
+git config user.email "$GITHUB_EMAIL"
+
+echo -e "${GREEN}✅ Git inicializado${NC}"
+
+# ============================================
+# CRIAR ARQUIVOS
+# ============================================
+
+echo -e "\n${BLUE}=== CRIANDO ARQUIVOS ===${NC}"
+
+# Criar pastas
+mkdir -p src/{pages,components/{layout,home,quiz,performance,ui},lib,api,hooks,utils,test/__tests__}
+mkdir -p public
+mkdir -p .github/workflows
+
+echo -e "${GREEN}✅ Pastas criadas${NC}"
+
+# ============================================
+# package.json
+# ============================================
+cat > package.json << 'EOF'
+{
+  "name": "lexia-platform",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .jsx,.js"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "@tanstack/react-query": "^5.28.0",
+    "tailwindcss": "^3.4.1",
+    "framer-motion": "^10.16.16",
+    "recharts": "^2.10.3",
+    "sonner": "^1.2.3",
+    "lucide-react": "^0.292.0",
+    "react-markdown": "^9.0.1",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.8",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.1",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.1"
+  }
+}
+EOF
+
+echo "✅ package.json"
+
+# ============================================
+# vite.config.js
+# ============================================
+cat > vite.config.js << 'EOF'
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    port: 3000,
+  },
+})
+EOF
+
+echo "✅ vite.config.js"
+
+# ============================================
+# tailwind.config.js
+# ============================================
+cat > tailwind.config.js << 'EOF'
+export default {
+  darkMode: ['class'],
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+      },
+    },
+  },
+}
+EOF
+
+echo "✅ tailwind.config.js"
+
+# ============================================
+# postcss.config.js
+# ============================================
+cat > postcss.config.js << 'EOF'
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+EOF
+
+echo "✅ postcss.config.js"
+
+# ============================================
+# .env.example
+# ============================================
+cat > .env.example << 'EOF'
+VITE_BASE44_API_KEY=sua_chave_aqui
+VITE_BASE44_PROJECT_ID=seu_id_aqui
+VITE_BASE44_API_URL=https://api.base44.com
+VITE_APP_NAME=LexIA
+VITE_ENV=development
+EOF
+
+echo "✅ .env.example"
+
+# ============================================
+# .gitignore
+# ============================================
+cat > .gitignore << 'EOF'
+node_modules/
+.env
+.env.local
+dist/
+build/
+.DS_Store
+*.log
+.vscode/
+.idea/
+*.swp
+coverage/
+EOF
+
+echo "✅ .gitignore"
+
+# ============================================
+# vercel.json
+# ============================================
+cat > vercel.json << 'EOF'
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "vite"
+}
+EOF
+
+echo "✅ vercel.json"
+
+# ============================================
+# public/index.html
+# ============================================
+cat > public/index.html << 'EOF'
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="LexIA - Plataforma inteligente de estudos jurídicos com IA" />
+    <meta name="theme-color" content="#1a1a1a" />
+    <title>LexIA - Estudos Jurídicos Inteligentes</title>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.jsx"></script>
+</body>
+</html>
+EOF
+
+echo "✅ public/index.html"
+
+# ============================================
+# src/index.jsx
+# ============================================
+cat > src/index.jsx << 'EOF'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+)
+EOF
+
+echo "✅ src/index.jsx"
+
+# ============================================
+# src/index.css
+# ============================================
+cat > src/index.css << 'EOF'
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    --muted: 0 0% 45%;
+    --muted-foreground: 0 0% 63.9%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+EOF
+
+echo "✅ src/index.css"
+
+# ============================================
+# src/App.jsx (COMPLETO)
+# ============================================
+cat > src/App.jsx << 'EOF'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route 
+          path="/" 
+          element={
+            <div style={{ 
+              padding: '20px',
+              textAlign: 'center',
+              minHeight: '100vh',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              fontFamily: 'Arial'
+            }}>
+              <h1>🎉 LexIA Platform</h1>
+              <p>Bem-vindo! Plataforma inteligente de estudos jurídicos</p>
+              <p>Em breve mais funcionalidades estarão disponíveis.</p>
+            </div>
+          } 
+        />
+      </Routes>
+    </Router>
+  )
+}
+
+export default App
+EOF
+
+echo "✅ src/App.jsx"
+
+# ============================================
+# README.md
+# ============================================
+cat > README.md << 'EOF'
+# 📚 LexIA - Plataforma Inteligente de Estudos Jurídicos
+
+Uma plataforma educativa com IA integrada para estudantes de Direito.
+
+## 🚀 Quick Start
+
+### 1. Instale dependências
+```bash
+npm install
